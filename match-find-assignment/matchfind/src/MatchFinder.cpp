@@ -13,8 +13,10 @@ namespace MatchFinderNS  {
 
 /// --------PUBLIC-----------
 
-MatchFinder::MatchFinder(unsigned int size)
+MatchFinder::MatchFinder(unsigned int size) :
+    m_threadsCount(size)
 {
+ 
 }
 
 MatchFinder::MatchFinder(std::string path, std::string mask, unsigned int size)
@@ -64,7 +66,7 @@ void MatchFinder::SetMask(const std::string& mask)
     if(m_mask == mask)
         return;
 
-    m_mask = mask;
+    m_mask = HelpersNS::FitStringToBoostRegex(mask);
     m_needReload = true;
 };
 
@@ -113,7 +115,7 @@ void MatchFinder::readAndParse(std::ifstream& infile, unsigned int readSize, int
     lock.unlock();
     MatchFinderNS::MatchMap resMap;
 
-    for(const auto& chunk : chunks)
+    for (const auto& chunk : chunks)
     {
         matchFind(chunk, m_mask, resMap);
     }
@@ -141,7 +143,7 @@ void MatchFinder::runFileParse()
     auto readByte = calcBytePerThread();
     int lineCounter = 0;
 
-    while(m_pool.size() < m_threadsCount)
+    while(m_pool.size() < m_threadsCount )
     {
         m_pool.push_back(std::thread(&MatchFinder::parseCycle, this, std::ref(file), readByte, std::ref(lineCounter)));
     }

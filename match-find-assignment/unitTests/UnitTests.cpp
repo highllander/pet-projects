@@ -57,17 +57,17 @@ BOOST_FIXTURE_TEST_CASE(CheckFinder, MatchFinderFixture)
     m_matchfinder.SetMask("?ad");
 
     m_matchfinder.StartMatchFinding();
+    auto matches = m_matchfinder.GetMatches();
 
-    auto mathces = m_matchfinder.GetMatches();
     std::ifstream output1;
     output1.open(boost::filesystem::current_path().string() + "/Release/output1.txt", std::ios::in);
-    
-    assert(!output1.is_open());
 
-    std::string str = "";
-    while(std::getline(output1, str)) {
-        BOOST_CHECK (mathces.find(str) != mathces.end());
+    std::string str;
+    while (std::getline(output1, str)) {
+        BOOST_REQUIRE(matches.find(str) != matches.end());
     }
+
+    output1.close();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

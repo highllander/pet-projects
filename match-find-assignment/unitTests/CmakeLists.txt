@@ -1,0 +1,14 @@
+cmake_minimum_required(VERSION 3.15) 
+
+project (${CMAKE_PROJECT_NAME}_UT)
+
+add_executable(${PROJECT_NAME} UnitTests.cpp ${SOURCE_SRC})
+
+target_link_libraries(${PROJECT_NAME} PRIVATE ${Boost_LIBRARIES} )
+target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIR})
+
+file(GLOB UNIT_TESTS_STUFF "${PROJECT_SOURCE_DIR}/testStuff/*.txt")
+file(COPY ${UNIT_TESTS_STUFF} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE})
+
+enable_testing()
+add_test(UnitTests ${PROJECT_NAME}) #run all tests

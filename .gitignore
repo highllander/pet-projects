@@ -1,2 +1,4 @@
 /match-find-assignment/build
-/match-find-assignment/.vs
+/match-find-assignment/.vs/*
+
+/thread-pool-lib/build

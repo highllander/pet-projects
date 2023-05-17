@@ -1,5 +1,7 @@
 #include "threadPool.h"
 
+#include <iostream>
+
 namespace ThreadPoolNS {
 
 
@@ -14,15 +16,15 @@ namespace ThreadPoolNS {
 							std::unique_lock<std::mutex> lock(m_queueMutex);
 							m_cond.wait(lock, [this]()
 								{
-									return m_stop || !m_queue.empty();
+									return m_stop || !m_taskQueue.empty();
 								});
 
 							// when stop commands came, stops worker if there is no any more task
-							if (m_stop && m_queue.empty())
+							if (m_stop && m_taskQueue.empty())
 								return;
 
-							task = std::move(m_queue.front());
-							m_queue.pop();
+							task = std::move(m_taskQueue.front());
+							m_taskQueue.pop();
 
 							task();
 						}
@@ -46,9 +48,30 @@ namespace ThreadPoolNS {
 		}
 	}
 
+	bool ThreadPool::Post(const task_t& task)
+	{
+		bool isOk = false;
+		{
+			try {
+				std::unique_lock<std::mutex> lock(m_queueMutex);
+				m_taskQueue.emplace(task);
+				isOk = true;
+				m_cond.notify_one();
+			}
+			catch (const std::exception& ex) {
+				std::cout << "Error: ex=" << ex.what();
+			}
+		}
+		return true;
+	}
 
 	ThreadPool::~ThreadPool() {
 		Shutdown();
+	}
+
+	std::shared_ptr<IThreadPool> CreateThreadPool(size_t poolSize)
+	{
+		return std::make_shared<ThreadPool>(poolSize);
 	}
 
 }

@@ -12,5 +12,5 @@ enable_testing()
 
 add_test(
     NAME AllTests
-    COMMAND ${PROJECT_NAME}
+    COMMAND ${PROJECT_NAME} --log_level=test_suite
 )

@@ -8,37 +8,69 @@
 
 BOOST_AUTO_TEST_SUITE(ThreadPool)
 
-BOOST_AUTO_TEST_CASE(RunThreadPool)
+BOOST_AUTO_TEST_CASE(PostDummyLambdas)
 {
-    ThreadPoolNS::ThreadPool pool(4);
-    auto task_getInt = pool.PostTask([]() 
-        {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-            return 42;
-        });
-    
-    BOOST_REQUIRE_EQUAL(task_getInt.get(), 42);
+    auto pool = ThreadPoolNS::CreateThreadPool(4);
+    const size_t TASK_NUMBER = 10;
+    auto dummyTask = []() {};
+
+    for(int i = 0; i < TASK_NUMBER; ++i)
+        BOOST_REQUIRE(pool->Post(dummyTask));
+     
+    pool->Shutdown();
 }
 
-BOOST_AUTO_TEST_CASE(PoolingTasks)
+int getSum(int a, int b)
 {
-    ThreadPoolNS::ThreadPool pool;
-    auto dummy = [](int number) 
+    return a + b;
+}
+BOOST_AUTO_TEST_CASE(PostTasks)
+{
+    auto pool = ThreadPoolNS::CreateThreadPool();
+
+    auto value = pool->PostTask(getSum, 15, 10);
+    BOOST_REQUIRE_EQUAL(value.get(), 25);
+
+    auto value2 = pool->PostTask(getSum, 10, 10);
+    BOOST_REQUIRE_EQUAL(value2.get(), 20);
+
+    pool->Shutdown();
+}
+
+BOOST_AUTO_TEST_CASE(PoolAndWaitResults)
+{
+    auto pool = ThreadPoolNS::CreateThreadPool();
+    auto dummy = [](int number)
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(200)); 
-            std::cout << "I am {" << number << "} done!\n";
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            auto log = "task N" + std::to_string(number) + " is done";
+            BOOST_TEST_MESSAGE(log);
         };
        
     std::vector<std::future<void>> results;
 
-    for (int i = 20; i >= 0; --i) {
-        results.push_back(pool.PostTask(dummy, i));
+    const size_t TASK_NUMBER = 10;
+    for (int i = 0; i < TASK_NUMBER; ++i) {
+        results.push_back(pool->PostTask(dummy, i));
     }
+
     for (auto& r : results)
         r.get();
 
-    BOOST_CHECK_NO_THROW(pool.Shutdown());
+    BOOST_CHECK_NO_THROW(pool->Shutdown());
 }
- 
+
+
+BOOST_AUTO_TEST_CASE(ShutdownWhileActive)
+{
+    auto pool = ThreadPoolNS::CreateThreadPool();
+    const size_t TASK_NUMBER = 100;
+
+    for (int i = 0; i < TASK_NUMBER; ++i) {
+        pool->PostTask([]() {});
+    }
+
+    BOOST_CHECK_NO_THROW(pool->Shutdown());
+}
 
 BOOST_AUTO_TEST_SUITE_END()
